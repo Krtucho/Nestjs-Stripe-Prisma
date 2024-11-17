@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+// model Product {
+//   id Int @default(autoincrement()) @id
+//   name String @unique
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   price Float
+//   sale Boolean @default(false)
+//   availibility Availibility
+//   reviews Review[]
+//   tags Tag[]
+//   description Description?
+//  }
+
+// model Description{
+//   id Int @default(autoincrement()) @id
+//   content String
+//   product Product @relation(fields: [productId], references: [id])
+//   productId Int @unique
+// }
+
+// model Review {
+//   id Int @default(autoincrement()) @id
+//   title String
+//   content String
+//   rating Int
+//   product Product @relation(fields: [productId], references: [id])
+//   productId Int
+// }
+
+// model Tag {
+//   id Int @default(autoincrement()) @id
+//   content String
+//   products Product[]
+// }
+
+// enum Availibility{
+//   IN_STORE
+//   ONLINE
+// }
+
+model Company {
+  id       Int       @id @default(autoincrement())
+  name     String
+  payments Payment[]
+  bankCard String // Información de la tarjeta bancaria 
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  price     Float    // Precio del pedido
+  // Otros campos del modelo Order
+  payment   Payment? @relation // Relación uno a uno con Payment
+}
+
+model Payment {
+  id             Int             @id @default(autoincrement())
+  amount         Float           // Monto total del pago
+  finalAmount    Float           // Monto final después de aplicar descuentos
+  status         PaymentStatus    @default(PENDING) // Estado por defecto es PENDING
+  paymentDate    DateTime        // Fecha en la que se realizó el pago
+  depositDate    DateTime?       // Fecha en la que se hizo el depósito
+  receivedDate   DateTime?       // Fecha en la que llegó el dinero
+  paymentMethods PaymentMethod[]
+  companyId      Int
+  company        Company          @relation(fields: [companyId], references: [id])
+  account        Account[]
+  orderId       Int?             @unique// Campo para almacenar el ID de Order
+  order          Order?           @relation(fields: [orderId], references: [id]) // Relación uno a uno con Order
+}
+
+model PaymentMethod {
+  id                 Int               @id @default(autoincrement())
+  name               String            @unique // Nombre único para el método de pago
+  type               PaymentMethodType // Enum para el tipo de método de pago
+  date               DateTime // Fecha para hacer la transferencia
+  discountPercentage Float // Porcentaje de descuento a aplicar
+  paymentId          Int
+  payment            Payment           @relation(fields: [paymentId], references: [id])
+}
+
+model Account {
+  id          Int             @id @default(autoincrement())
+  stripeId    String // Identificador de Stripe para el pago
+  totalAmount Float           @default(0) // Total acumulado de los pagos
+  bankCard    String // Información de la tarjeta bancaria 
+  paymentId   Int?
+  payment     Payment?        @relation(fields: [paymentId], references: [id])
+  accountType TransactionType // Tipo de cuenta: entrada o salida de dinero
+}
+
+enum TransactionType {
+  INCOME // Entrada de dinero
+  EXPENSE // Salida de dinero
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+}
+
+enum PaymentMethodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NOW
+  // ON_DEMAND
+  // SPECIALIZED
+}
