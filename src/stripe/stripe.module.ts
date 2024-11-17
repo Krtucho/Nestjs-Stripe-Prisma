@@ -1,8 +1,8 @@
 
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { StripeController } from './stripe.controller';
-import { StripeService } from './stripe.service';
+import { StripeController } from './infrastructure/stripe.controller';
+import { StripeService } from './application/stripe.service';
 
 @Module({})
 export class StripeModule {
@@ -24,6 +24,12 @@ export class StripeModule {
           provide: 'STRIPE_WEBHOOK_SECRET',
           useFactory: async (configService: ConfigService) =>
           configService.get('STRIPE_WEBHOOK_SECRET'),
+          inject: [ConfigService],
+        },
+        {
+          provide: 'STRIPE_USER_ACCOUNT',
+          useFactory: async (configService: ConfigService) =>
+          configService.get('STRIPE_USER_ACCOUNT'),
           inject: [ConfigService],
         }
       ],

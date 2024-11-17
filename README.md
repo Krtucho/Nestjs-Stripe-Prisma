@@ -1,85 +1,93 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Proyecto de Pagos con devoluciones usando plataforma de Stripe y Nestjs con Prisma como backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Run
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Para correrlo solamente cree el .env con los datos necesarios explicados en .env.copy
 
-## Description
+## Database
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Carpeta database, para crear la conexion con servidor de Stripe
 
-## Project setup
+en: **prisma/schema.prisma** se encuentran los modelos, en caso de ser necesario aplicar migraciones con: (Buscar en la documentacion de prisma)
+>npx prisma migrate dev --name init
+>
+## Stripe
 
-```bash
-$ npm install
+### Controller
+
+```typescript
+// Metodos para crear account, company y order en la base de datos, para ir probando
+@Post('create-account')
+  async createAccount(@Body() createAccountDto: Prisma.AccountCreateInput)
+@Post('create-company')
+  async createCompany(@Body() createCompanyDto: Prisma.CompanyCreateInput)
+@Post('create-order')
+  async createOrder(@Body() createOrderDto: Prisma.OrderCreateInput)
 ```
 
-## Compile and run the project
+#### Create payment
 
-```bash
-# development
-$ npm run start
+LLama al service, guarda un payment en la base de datos
+y genera una url de pago
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```typescript
+@Post('create-payment')
+  async createPayment(
+    @Body() body: CreatePaymentDTO, 
+    @Req() request
+    )
 ```
 
-## Run tests
+#### Webhook
 
-```bash
-# unit tests
-$ npm run test
+Recibe todos los eventos desde Stripe
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```typescript
+@HttpCode(200)
+@Post('webhook') // Redirigir webhooks de stripe a esta url
+  async webhook( 
+    @Req() req: RawBodyRequest<Request>,
+    @Headers("stripe-signature") signature: string,
+    ): Promise<void>
+```
+### Service
+Tarea que revisa cuales pagos se han realizado que tenian como fecha limite hoy para realizarse
+```typescript
+@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Para probar el codigo real
+    async checkPayments() : Promise<void>
 ```
 
-## Resources
+#### Webhook
+Quedandonos con evento de que el cliente ha pagado correctamente
+```typescript
+  switch (event.type) {
+            case 'checkout.session.completed':
+```
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+#### Create payment
+Creacion de url de pago a partir de un payment y paymentMethod que se crea con diferente informacion
+```typescript
+const session: Stripe.Response<Stripe.Checkout.Session> =
+            await this.stripe.checkout.sessions.create({
+                success_url: `${process.env.DOMAIN_URL}/success`,
+                line_items: [
+                    {
+                        price_data: {
+                            currency: "usd",
+                            product_data: {
+                                name: paymentMethod.name,
+                            },
+                            unit_amount: payment.finalAmount,
+                        },
+                        quantity: 1,
+                    },
+                ],
+                metadata: {
+                    companyId: payment.companyId,
+                    paymentId: payment.id
+                },
+                mode: "payment",
+                // expires_at: Math.floor(Date.now() / 1000) + 604800, // Una semana desde ahora en segundos
+                //expires_at: Math.floor(Date.now() / 1000) + 2592000, // Un mes desde ahora en segundos
+            });
+```

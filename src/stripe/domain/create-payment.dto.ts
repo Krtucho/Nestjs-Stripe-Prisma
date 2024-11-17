@@ -1,7 +1,5 @@
 import { Prisma } from '@prisma/client';
 
-export class TestPaymentDTO {
+export class CreatePaymentDTO {
     companyId: number;
-    orderId: number;
-
 }
