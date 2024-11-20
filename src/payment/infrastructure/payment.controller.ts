@@ -3,13 +3,8 @@ import {
     Post, 
     Body, 
     Req, 
-    RawBodyRequest, 
-    Headers, 
-    HttpCode, 
-    Get
   } from '@nestjs/common';
   import { CreatePaymentDTO } from '../../payment/domain/create-payment.dto';
-  import { Prisma, TransactionType } from '@prisma/client';
   import Stripe from 'stripe';
 import { PaymentService } from '../application/payment.service';
   

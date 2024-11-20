@@ -76,7 +76,7 @@ model Payment {
   depositDate    DateTime?       // Fecha en la que se hizo el depósito
   receivedDate   DateTime?       // Fecha en la que llegó el dinero
   // paymentMethods PaymentMethod[]
-  paymentMethodId Int
+  paymentMethodId Int           @default(0)
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   companyId      Int
   company        Company          @relation(fields: [companyId], references: [id])

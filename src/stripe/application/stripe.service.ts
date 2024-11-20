@@ -1,9 +1,7 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
-import { Payment, PaymentMethodType, PaymentStatus, Prisma, TransactionType } from '@prisma/client';
+import { PaymentStatus } from '@prisma/client';
 import { DatabaseService } from 'src/database/application/database.service';
-import { CreatePaymentDTO } from '../../payment/domain/create-payment.dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { AccountService } from 'src/shared/application/account.service';
 
 
@@ -57,99 +55,7 @@ export class StripeService {
         await this.accountService.createAccountDefaultValues(payment, session)
         return session
     }
-    async getBalance() {
-        const balance = await this.stripe.balance.retrieve();
-        return balance
-    }
-
-    async createCustomer() {
-        const customer = await this.stripe.customers.create({
-            name: 'Jenny Rosen',
-            email: 'jennyrosen@example.com',
-        });
-
-        return customer
-    }
-
     
-
-    async testPayout() {
-        // const account = await this.stripe.accounts.create({
-        //     type: 'express', // or 'standard' based on your needs
-        //     email: 'customer@example.com',
-        // });
-        // console.log(account)
-
-        const accountId = 'acct_1QNAU0P6Q3nxJs8z'
-
-        // const transfer = await this.stripe.transfers.create({
-        //     amount: 100, // Amount in cents
-        //     currency: 'usd', // e.g., 'usd'
-        //     destination: accountId, // The connected account ID
-        // });
-
-        // console.log(transfer)
-
-        const payout = await this.stripe.payouts.create({
-            amount: 5000, // Monto en centavos
-            currency: 'usd',
-            destination: 'DE89370400440532013000'// '000123456789', // ID de la tarjeta
-        });
-
-        // console.log('Payout')
-
-        console.log(payout)
-        return payout
-    }
-
-    async testCharges() {
-
-        const charge = await this.stripe.charges.create({
-            amount: 1099,
-            currency: 'usd',
-            source: 'tok_visa',
-        });
-        return charge
-    }
-
-    async getCustomers(){
-        const customers = await this.stripe.customers.list({
-            limit: 3,
-          });
-          return customers
-    }
-    async fundCustomer() {
-        const customerCashBalanceTransaction = await this.stripe
-            .testHelpers
-            .customers
-            .fundCashBalance(
-                'cus_RFbOdFvKKAi3gg',
-                {
-                    amount: 5000,
-                    currency: 'eur',
-                }
-            );
-
-        return customerCashBalanceTransaction
-    }
-
-    async createCharge(customerId, amount, currency) {
-        try {
-            const charge = await this.stripe.charges.create({
-                amount: amount, // Amount in cents
-                currency: currency, // e.g., 'usd'
-                customer: customerId, // The ID of the customer you want to charge
-                description: 'Charge for customer', // Optional description
-            });
-
-            console.log('Charge successful:', charge);
-            return charge;
-        } catch (error) {
-            console.error('Error creating charge:', error);
-            throw error;
-        }
-    }
-
     async webhook(request, signature) {
         let event;
 
@@ -221,13 +127,4 @@ export class StripeService {
             return false;
         }
     }
-
-    // Ejemplo de uso
-    //   sendMoneyToUser('acct_1234567890', 100).then(result => {
-    //     if (result) {
-    //       console.log('El pago se ha enviado correctamente');
-    //     } else {
-    //       console.log('Hubo un error al enviar el pago');
-    //     }
-    //   });
 }
