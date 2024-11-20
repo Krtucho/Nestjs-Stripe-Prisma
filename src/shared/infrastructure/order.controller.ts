@@ -11,17 +11,18 @@ import {
   import { CreatePaymentDTO } from '../../payment/domain/create-payment.dto';
   import { Prisma, TransactionType } from '@prisma/client';
   import Stripe from 'stripe';
-import { PaymentService } from '../application/payment.service';
+import { OrderService } from '../application/order.service';
   
   @Controller('payment')
   export class PaymentController {
-    constructor(private readonly paymentService: PaymentService) {}
-  
-    @Post('create-payment')
-    async createPayment(
-      @Body() body: CreatePaymentDTO, 
-      @Req() request
-      ): Promise<Stripe.Response<Stripe.Checkout.Session>> {
-      return this.paymentService.createPayment(body, request)
-    }
+    constructor(private readonly orderService: OrderService) {}
+
+@Post('create-order')
+async createOrder(@Body() createOrderDto: Prisma.OrderCreateInput): Promise<{
+  id: number;
+  price: number;
+}>{
+  return this.orderService.createOrder(createOrderDto)
+}
+
   }

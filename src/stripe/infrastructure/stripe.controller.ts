@@ -17,75 +17,61 @@ import Stripe from 'stripe';
 export class StripeController {
   constructor(private readonly stripeService: StripeService) {}
 
-  @Post('create-payment')
-  async createPayment(
-    @Body() body: CreatePaymentDTO, 
-    @Req() request
-    ): Promise<Stripe.Response<Stripe.Checkout.Session>> {
-    return this.stripeService.createPayment(body, request)
-  }
-
   // Metodos para crear account, company y order en la base de datos, para ir probando
-  @Post('create-account')
-  async createAccount(@Body() createAccountDto: Prisma.AccountCreateInput): Promise<{
-    id: number;
-    paymentId: number;
-    stripeId: string;
-    totalAmount: number;
-    bankCard: string;
-    accountType: TransactionType;
-}>{
-    return this.stripeService.createAccount(createAccountDto)
-  }
-  @Post('create-company')
-  async createCompany(@Body() createCompanyDto: Prisma.CompanyCreateInput):Promise<{
-    id: number;
-    name: string;
-    bankCard: string;
-}>{
-    return this.stripeService.createCompany(createCompanyDto)
-  }
-  @Post('create-order')
-  async createOrder(@Body() createOrderDto: Prisma.OrderCreateInput): Promise<{
-    id: number;
-    price: number;
-}>{
-    return this.stripeService.createOrder(createOrderDto)
-  }
-  @Get('customers')
-  async getCustomers(){
-    return await this.stripeService.getCustomers()
-  }
+//   @Post('create-account')
+//   async createAccount(@Body() createAccountDto: Prisma.AccountCreateInput): Promise<{
+//     id: number;
+//     paymentId: number;
+//     stripeId: string;
+//     totalAmount: number;
+//     bankCard: string;
+//     accountType: TransactionType;
+// }>{
+//     return this.stripeService.createAccount(createAccountDto)
+//   }
+//   @Post('create-company')
+//   async createCompany(@Body() createCompanyDto: Prisma.CompanyCreateInput):Promise<{
+//     id: number;
+//     name: string;
+//     bankCard: string;
+// }>{
+//     return this.stripeService.createCompany(createCompanyDto)
+//   }
 
-  @Post('create-customer')
-  async createCustomer(){
-    return await this.stripeService.createCustomer()
-  }
+//   @Get('customers')
+//   async getCustomers(){
+//     return await this.stripeService.getCustomers()
+//   }
 
-  @Post('fund-customer')
-  async fundCustomer(){
-    return await this.stripeService.fundCustomer()
-  }
+//   @Post('create-customer')
+//   async createCustomer(){
+//     return await this.stripeService.createCustomer()
+//   }
 
-  @Get('balance')
-  async getBalance(){
-    return await this.stripeService.getBalance()
-  }
+//   @Post('fund-customer')
+//   async fundCustomer(){
+//     return await this.stripeService.fundCustomer()
+//   }
 
-  @Get('account')
-  async getAccount(){
-    return await this.stripeService.testAccount()
-  }
+//   @Get('balance')
+//   async getBalance(){
+//     return await this.stripeService.getBalance()
+//   }
 
-  @Post('payout')
-  async testPayout(){
-    return await this.stripeService.testPayout()
-  }
+//   @Get('account')
+//   async getAccount(){
+//     return await this.stripeService.testAccount()
+//   }
 
-  @Get('charge')
-  async testCharge(){
-    return await this.stripeService.testCharges()//this.stripeService.createCharge('cus_RFbOdFvKKAi3gg',100, 'usd')
-  }
+//   @Post('payout')
+//   async testPayout(){
+//     return await this.stripeService.testPayout()
+//   }
+
+//   @Get('charge')
+//   async testCharge(){
+//     return await this.stripeService.testCharges()//this.stripeService.createCharge('cus_RFbOdFvKKAi3gg',100, 'usd')
+//   }
   // Stripe pide 3 cosas para la creacion de un evento enviado al webhook: body de la peticion en bruto(RawBody), signature: firma para comprobar que es la api a la cual se permitio y webhook_secret: este se pasa en el .env
   @HttpCode(200)
   @Post('webhook') // Redirigir webhooks de stripe a esta url
