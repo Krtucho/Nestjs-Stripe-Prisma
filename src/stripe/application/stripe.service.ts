@@ -1,8 +1,8 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 import { Payment, PaymentMethodType, PaymentStatus, Prisma, TransactionType } from '@prisma/client';
 import { DatabaseService } from 'src/database/application/database.service';
-import { CreatePaymentDTO } from '../domain/create-payment.dto';
+import { CreatePaymentDTO } from '../../payment/domain/create-payment.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 
@@ -34,59 +34,7 @@ export class StripeService {
         return this.databaseService.order.create({ data: createOrderDto });
     }
 
-    // Crear Payment y generar URL suministrandole un companyId
-    async createPayment(
-        testPaymentDTO: CreatePaymentDTO,
-        request
-    ): Promise<Stripe.Response<Stripe.Checkout.Session>> {
-        const actualDate: Date = new Date() // Fecha de hoy
-        const date: Date = new Date() // Fecha limite para realizar el pago
-        date.setDate(actualDate.getDate() + 7) // Fecha + siete dias a partir de hoy
-
-        // Genera un payment con valores por defecto y fecha limite de pago hasta dentro de siete dias a partir de hoy
-        const payment = await this.databaseService.payment.create({
-            data: {
-                amount: 100,
-                finalAmount: 100,
-                paymentDate: actualDate,
-                depositDate: date,
-                companyId: 1,
-            },
-        });
-
-        // Crear el PaymentMethod
-        const paymentMethod = await this.databaseService.paymentMethod.create({
-            data: {
-                name: `Método de pago personalizado para ${payment.id}`,
-                type: PaymentMethodType.WEEKLY, // O cualquier otro tipo que necesites
-                date: actualDate,
-                discountPercentage: 0, // Ajusta según sea necesario
-                paymentId: payment.id,
-            },
-        });
-
-        // Crear el Order relacionado con el Payment
-        const order = await this.databaseService.order.create({
-            data: {
-                price: 50,
-            },
-        });
-
-        // Actualiza el payment creado para que sepa que orden(Order) le corresponde
-        await this.databaseService.payment.update({
-            where: { id: payment.id },
-            data: {
-                orderId: order.id,
-            },
-        });
-
-        // console.log(payment)
-        // console.log(paymentMethod)
-        // console.log(order)
-
-
-        return await this.createStripePaymentUrl(payment, paymentMethod)// Genera la url de pago
-    }
+   
 
     // Suministrar una Url de pago de Stripe para un payment con un paymentMethod creado
     async createStripePaymentUrl(payment, paymentMethod): Promise<Stripe.Response<Stripe.Checkout.Session>> {
@@ -132,6 +80,101 @@ export class StripeService {
 
         return session
     }
+    async getBalance() {
+        const balance = await this.stripe.balance.retrieve();
+        return balance
+    }
+
+    async createCustomer() {
+        const customer = await this.stripe.customers.create({
+            name: 'Jenny Rosen',
+            email: 'jennyrosen@example.com',
+        });
+
+        return customer
+    }
+
+    async testAccount() {
+        const account = await this.stripe.accounts.retrieve('acct_1QI44CP1fDgraqt4');
+        return account
+    }
+
+    async testPayout() {
+        // const account = await this.stripe.accounts.create({
+        //     type: 'express', // or 'standard' based on your needs
+        //     email: 'customer@example.com',
+        // });
+        // console.log(account)
+
+        const accountId = 'acct_1QNAU0P6Q3nxJs8z'
+
+        // const transfer = await this.stripe.transfers.create({
+        //     amount: 100, // Amount in cents
+        //     currency: 'usd', // e.g., 'usd'
+        //     destination: accountId, // The connected account ID
+        // });
+
+        // console.log(transfer)
+
+        const payout = await this.stripe.payouts.create({
+            amount: 5000, // Monto en centavos
+            currency: 'usd',
+            destination: 'DE89370400440532013000'// '000123456789', // ID de la tarjeta
+        });
+
+        // console.log('Payout')
+
+        console.log(payout)
+        return payout
+    }
+
+    async testCharges() {
+
+        const charge = await this.stripe.charges.create({
+            amount: 1099,
+            currency: 'usd',
+            source: 'tok_visa',
+        });
+        return charge
+    }
+
+    async getCustomers(){
+        const customers = await this.stripe.customers.list({
+            limit: 3,
+          });
+          return customers
+    }
+    async fundCustomer() {
+        const customerCashBalanceTransaction = await this.stripe
+            .testHelpers
+            .customers
+            .fundCashBalance(
+                'cus_RFbOdFvKKAi3gg',
+                {
+                    amount: 5000,
+                    currency: 'eur',
+                }
+            );
+
+        return customerCashBalanceTransaction
+    }
+
+    async createCharge(customerId, amount, currency) {
+        try {
+            const charge = await this.stripe.charges.create({
+                amount: amount, // Amount in cents
+                currency: currency, // e.g., 'usd'
+                customer: customerId, // The ID of the customer you want to charge
+                description: 'Charge for customer', // Optional description
+            });
+
+            console.log('Charge successful:', charge);
+            return charge;
+        } catch (error) {
+            console.error('Error creating charge:', error);
+            throw error;
+        }
+    }
 
     async webhook(request, signature) {
         let event;
@@ -165,6 +208,11 @@ export class StripeService {
                     })
                     console.log(payment)
 
+                    // TODO: Actualiza el account(mi account de Stripe, que seria el Company) en la bd con la nueva cantidad de dinero que se transfirio
+                    // Le paso a la compannia la cantidad de dinero menos los impuestos
+                    // Update account in bd
+                    // this.databaseService.account.update()
+
                     console.log("Pago completado")
                 } catch (err) {
                     return err;
@@ -176,7 +224,7 @@ export class StripeService {
     // Tarea que se ejecutara una vez al dia, por el momento tiene puesto que se ejecute al medio dia (Descomentar segunda linea con @Cron(...) )
     // @Cron('45 * * * * *') // Para probar en cada segundo 45 de cada minuto
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Para probar el codigo real
-    async checkPayments() : Promise<void>{
+    async checkPayments(): Promise<void> {
         console.log("Checking Payment")
         const begDate: Date = new Date() //  Fecha de hoy a las 00:00
         const endDate: Date = new Date() // Fecha de hoy a las 23:59

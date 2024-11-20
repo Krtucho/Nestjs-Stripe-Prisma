@@ -75,7 +75,9 @@ model Payment {
   paymentDate    DateTime        // Fecha en la que se realizó el pago
   depositDate    DateTime?       // Fecha en la que se hizo el depósito
   receivedDate   DateTime?       // Fecha en la que llegó el dinero
-  paymentMethods PaymentMethod[]
+  // paymentMethods PaymentMethod[]
+  paymentMethodId Int
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   companyId      Int
   company        Company          @relation(fields: [companyId], references: [id])
   account        Account[]
@@ -89,8 +91,9 @@ model PaymentMethod {
   type               PaymentMethodType // Enum para el tipo de método de pago
   date               DateTime // Fecha para hacer la transferencia
   discountPercentage Float // Porcentaje de descuento a aplicar
-  paymentId          Int
-  payment            Payment           @relation(fields: [paymentId], references: [id])
+  payments Payment[]
+  // paymentId          Int
+  // payment            Payment           @relation(fields: [paymentId], references: [id])
 }
 
 model Account {

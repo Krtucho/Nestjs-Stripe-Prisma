@@ -5,10 +5,11 @@ import {
   Req, 
   RawBodyRequest, 
   Headers, 
-  HttpCode 
+  HttpCode, 
+  Get
 } from '@nestjs/common';
 import { StripeService } from '../application/stripe.service';
-import { CreatePaymentDTO } from '../domain/create-payment.dto';
+import { CreatePaymentDTO } from '../../payment/domain/create-payment.dto';
 import { Prisma, TransactionType } from '@prisma/client';
 import Stripe from 'stripe';
 
@@ -51,7 +52,40 @@ export class StripeController {
 }>{
     return this.stripeService.createOrder(createOrderDto)
   }
+  @Get('customers')
+  async getCustomers(){
+    return await this.stripeService.getCustomers()
+  }
 
+  @Post('create-customer')
+  async createCustomer(){
+    return await this.stripeService.createCustomer()
+  }
+
+  @Post('fund-customer')
+  async fundCustomer(){
+    return await this.stripeService.fundCustomer()
+  }
+
+  @Get('balance')
+  async getBalance(){
+    return await this.stripeService.getBalance()
+  }
+
+  @Get('account')
+  async getAccount(){
+    return await this.stripeService.testAccount()
+  }
+
+  @Post('payout')
+  async testPayout(){
+    return await this.stripeService.testPayout()
+  }
+
+  @Get('charge')
+  async testCharge(){
+    return await this.stripeService.testCharges()//this.stripeService.createCharge('cus_RFbOdFvKKAi3gg',100, 'usd')
+  }
   // Stripe pide 3 cosas para la creacion de un evento enviado al webhook: body de la peticion en bruto(RawBody), signature: firma para comprobar que es la api a la cual se permitio y webhook_secret: este se pasa en el .env
   @HttpCode(200)
   @Post('webhook') // Redirigir webhooks de stripe a esta url
