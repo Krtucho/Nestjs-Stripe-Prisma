@@ -26,15 +26,17 @@ export class PaymentService {
         const date: Date = new Date() // Fecha limite para realizar el pago
         date.setDate(actualDate.getDate() + 7) // Fecha + siete dias a partir de hoy
 
-        // Verifico si existe payment con esta orden, en caso de existir termino aqui
+        // Verifico si existe payment con esta orden, en caso de existir termino devolviendo una excepcion
         const productsOrders = await this.databaseService.payment.findFirst({
             where:
             {
                 orderId: createPaymentDTO.orderId
             }
         })
-        if (productsOrders)
-            throw new HttpException('El recurso no fue encontrado', HttpStatus.BAD_REQUEST);
+
+        console.log(productsOrders)
+        if (productsOrders) // Devuelvo una excepcion en caso de haber encontrado algun payment con este Order
+            throw new HttpException('La orden ya esta en uso', HttpStatus.BAD_REQUEST);
 
         // Genera un payment con valores por defecto y fecha limite de pago hasta dentro de siete dias a partir de hoy
         const payment = await this.databaseService.payment.create({
@@ -131,8 +133,9 @@ export class PaymentService {
 
         // if (moneyToReturn)
         const account = await this.accountService.getAccountforPayment(payment.id)
+        // Aqui actualizo la cuenta que pago (Cuenta del cliente)
         await this.accountService.updateAccount(account.id, {totalAmount: account.totalAmount+payment.finalAmount})
-        await this.stripeService.sendMoneyToUser(account.bankCard, moneyToReturn)
+        await this.stripeService.sendMoneyToAccount(account.bankCard, moneyToReturn)
 
         return moneyToReturn;
     }

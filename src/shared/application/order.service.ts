@@ -9,7 +9,7 @@ export class OrderService {
     ) {
     }
     async createOrderWithPrice(price: number){
-        console.log(this.databaseService.order)
+        // console.log(this.databaseService.order)
         const order = await this.databaseService.order.create({
             data: {
                 price,

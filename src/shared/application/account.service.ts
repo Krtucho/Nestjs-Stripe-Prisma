@@ -15,12 +15,12 @@ export class AccountService {
     }
 
     async createAccountDefaultValues(payment, session: Stripe.Response<Stripe.Checkout.Session>) {
-        const account: Prisma.AccountCreateInput = {
+        const account = {
             // "id": 1,
             bankCard: "1234-4567-8799-4948",
             stripeId: session.id,
             totalAmount: 0,
-            payment: payment,
+            paymentId: payment.id,
             accountType: TransactionType.INCOME
         } // Creando account de cliente relacionada con la url de pago
 

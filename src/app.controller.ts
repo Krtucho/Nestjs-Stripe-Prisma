@@ -12,7 +12,7 @@ export class AppController {
 
   @Get('success')
   success(){
-    console.log(Date.now())
+    // console.log(Date.now())
     return "Gracias por tu compra"
   }
 }

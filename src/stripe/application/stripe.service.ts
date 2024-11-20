@@ -55,9 +55,6 @@ export class StripeService {
         console.log(session)
 
         await this.accountService.createAccountDefaultValues(payment, session)
-
-       
-
         return session
     }
     async getBalance() {
@@ -176,10 +173,12 @@ export class StripeService {
                     // console.log(event.data.object.metadata)
                     // console.log(+event.data.object.metadata.paymentId)
 
+                    const date = new Date()
                     //Actualizo el Payment en bd con la informacion pasada en metadata cuando cree la url con el metodo createStripePaymentUrl
                     const payment = await this.databaseService.payment.update({
                         where: { id: +event.data.object.metadata.paymentId },
                         data: {
+                            receivedDate: date,
                             status: PaymentStatus.COMPLETED
                         }
                     })
@@ -194,20 +193,26 @@ export class StripeService {
     }
 
     
-
-    // No puedo probar esto de enviar dinero desde mi cuenta hacia otra porque al parecer necesito tener la cuenta activada, actualmente hice las pruebas con una cuenta de test
-    async sendMoneyToUser(destination: string, amount: number) {
+    async sendMoneyToAccount(destination: string, amount: number) {
         try {
             // Obtenemos la cuenta conectada
             // const connectedAccount = await this.stripe.accounts.retrieve(userId);
 
             // Creamos el pago
+            // Via usando transfers (Esto es para transferir desde mi account de Stripe a las connected accounts)
             const payment = await this.stripe.transfers.create({
                 amount: amount * 100, // Convertimos a centavos
                 currency: 'usd',
                 destination: destination,//connectedAccount.default_currency == 'usd' ? 'default_for_currency' : null,
                 description: 'Pago de prueba',
             });
+
+            // Via usando payout (Para transferir desde mi cuenta de account a alguna tarjeta o banco de prueba)
+            // const payout = await this.stripe.payouts.create({
+            //     amount: 5000, // Monto en centavos
+            //     currency: 'usd',
+            //     destination: 'DE89370400440532013000'// '000123456789', // Tarjeta o banco de prueba, cambiar este valor para probar
+            // });
 
             console.log('Pago creado:', payment);
             return true;
