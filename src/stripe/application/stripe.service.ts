@@ -9,12 +9,12 @@ import { AccountService } from 'src/shared/application/account.service';
 export class StripeService {
     private stripe: Stripe;
     private secret: string;
-    
+
     constructor(
         @Inject('STRIPE_API_KEY') private readonly apiKey: string,
         @Inject('STRIPE_WEBHOOK_SECRET') private readonly endpointSecret: string,
         @Inject('STRIPE_USER_ACCOUNT') private readonly userAccount: string,
-        
+
         private readonly databaseService: DatabaseService,
         private readonly accountService: AccountService
     ) {
@@ -55,7 +55,7 @@ export class StripeService {
         await this.accountService.createAccountDefaultValues(payment, session)
         return session
     }
-    
+
     async webhook(request, signature) {
         let event;
 
@@ -95,10 +95,72 @@ export class StripeService {
                     return err;
                 }
                 break;
+            // Webhooks para los payouts
+            case 'payout.created':
+                console.log('Evento: payout.created');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+
+            case 'payout.failed':
+                console.log('Evento: payout.failed');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+
+            case 'payout.succeeded':
+                console.log('Evento: payout.succeeded');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+            case 'payout.canceled':
+                console.log('Evento: payout.canceled');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+            case 'payout.paid':
+                console.log('Evento: payout.paid');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+            case 'payout.reconciliation_completed':
+                console.log('Evento: payout.reconciliation_completed');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+            case 'payout.updated':
+                console.log('Evento: payout.updated');
+                console.log('ID del pago:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+            // Webhooks para transfer
+            case 'transfer.created':
+                console.log('Evento: transfer.created');
+                console.log('ID de la transferencia:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+
+            case 'transfer.reversed':
+                console.log('Evento: transfer.failed');
+                console.log('ID de la transferencia:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+
+            case 'transfer.updated':
+                console.log('Evento: transfer.succeeded');
+                console.log('ID de la transferencia:', event.data.object.id);
+                // Agregar lógica personalizada aquí
+                break;
+
+
+
+
+            default:
+                console.log(`Evento desconocido: ${event.type}`);
         }
     }
 
-    
+
     async sendMoneyToAccount(destination: string, amount: number) {
         try {
             // Obtenemos la cuenta conectada
